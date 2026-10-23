@@ -1,6 +1,7 @@
 # Public keys that may sign a plugin's entitlements (ssh-keygen allowed_signers format):
 #   stromy-entitlements namespaces="stromy-entitlements" ssh-ed25519 AAAA...
 #
+stromy-entitlements namespaces="stromy-entitlements" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKrqsfAIDSaIsY6sEmyzoB062wDZkZoJDezbdIoB4rE3 stromy-entitlements 2026-10
 # EMPTY ON PURPOSE until activation (ORG-PLAN-413 B3PA): the production key is minted by the
 # operator, its PUBLIC half is added here as the only line, and its private half lives only in
 # the `ENTITLEMENTS_SIGNING_KEY` secret of the private stromy-org repo. While this file holds no
