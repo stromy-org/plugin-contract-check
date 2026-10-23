@@ -1,0 +1,81 @@
+name: entitlement-contract (reusable)
+
+# The reusable half of the public-plugin entitlement check (ORG-PLAN-413 B3P). A public
+# plugin's thin caller (caller/entitlement-contract.yml) calls this workflow PINNED BY FULL
+# COMMIT SHA. It verifies the plugin's signed entitlements file against the key list in this
+# repo and checks configured <= entitled. No secret is used or needed: the key list is public
+# and the signature is made by the private parent.
+#
+# Trust: the caller runs on `pull_request_target`, so GitHub executes the BASE branch's copy of
+# the caller. The PR head is checked out as untrusted DATA only: no script from it is run, no
+# build step, no credential persisted.
+
+on:
+  workflow_call:
+    inputs:
+      verifier_sha:
+        description: "Full commit SHA of this repo that holds verify_entitlements.py and allowed_signers (the caller's own pin)."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Refuse anything but a full commit SHA
+        env:
+          VERIFIER_SHA: ${{ inputs.verifier_sha }}
+        run: |
+          [[ "$VERIFIER_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::verifier_sha must be a 40-hex commit"; exit 1; }
+
+      - name: Fetch the verifier and the pinned key list
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: stromy-org/plugin-contract-check
+          ref: ${{ inputs.verifier_sha }}
+          path: verifier
+          persist-credentials: false
+
+      - name: The base branch (what the PR is merging into)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+
+      - name: The PR head, as untrusted data
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+          persist-credentials: false
+
+      - name: List the files the PR changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${REPO}/pulls/${PR}/files" --paginate \
+            --jq '.[] | .filename, (.previous_filename // empty)' > changed-files.txt
+          # The API lists at most 3000 files: a longer PR cannot be proven, so it fails closed.
+          [ "$(gh api "repos/${REPO}/pulls/${PR}" --jq .changed_files)" -lt 3000 ] \
+            || { echo "::error::PR changes 3000+ files; the protected-path rule cannot be proven"; exit 1; }
+
+      - name: Verify the signed entitlements
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          set -o pipefail
+          python3 verifier/verify_entitlements.py --head head --base base --repo "$REPO" \
+            --allowed-signers verifier/allowed_signers --changed-files changed-files.txt | tee verdict.txt
+          grep -Eq '^executed=[1-9][0-9]*$' verdict.txt \
+            || { echo "::error::zero checks executed - a check that ran nothing is not a pass"; exit 1; }

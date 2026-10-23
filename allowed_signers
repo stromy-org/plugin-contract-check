@@ -1,0 +1,10 @@
+# Public keys that may sign a plugin's entitlements (ssh-keygen allowed_signers format):
+#   stromy-entitlements namespaces="stromy-entitlements" ssh-ed25519 AAAA...
+#
+# EMPTY ON PURPOSE until activation (ORG-PLAN-413 B3PA): the production key is minted by the
+# operator, its PUBLIC half is added here as the only line, and its private half lives only in
+# the `ENTITLEMENTS_SIGNING_KEY` secret of the private stromy-org repo. While this file holds no
+# key line, the verifier fails every run ("verifier unavailable") - it can never pass.
+#
+# Rotation is add-then-remove: add the new public key as a second line and merge; switch the
+# secret and re-sign every plugin; only then delete the old line.

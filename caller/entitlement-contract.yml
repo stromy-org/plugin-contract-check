@@ -1,0 +1,28 @@
+name: entitlement-contract
+
+# Thin caller for the public-plugin entitlement check (ORG-PLAN-413 B3P). Added to this repo by
+# stromy-org's entitlements writer; changed only by an operator with ruleset bypass (a PR that
+# edits it fails its own check). It runs on `pull_request_target`, so GitHub executes THIS file
+# from the base branch, never the PR's edited copy. The verifier is pinned by full commit SHA;
+# rotating the pin is an operator change.
+#
+# The required status check for this repo's ruleset is the context
+# `entitlement-contract / verify` (this job, then the reusable workflow's job).
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: entitlement-contract-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  entitlement-contract:
+    uses: stromy-org/plugin-contract-check/.github/workflows/entitlement-contract.yml@__VERIFIER_SHA__
+    with:
+      verifier_sha: __VERIFIER_SHA__
