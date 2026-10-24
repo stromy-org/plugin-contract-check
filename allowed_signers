@@ -1,10 +1,13 @@
 # Public keys that may sign a plugin's entitlements (ssh-keygen allowed_signers format):
 #   stromy-entitlements namespaces="stromy-entitlements" ssh-ed25519 AAAA...
 #
-stromy-entitlements namespaces="stromy-entitlements" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKrqsfAIDSaIsY6sEmyzoB062wDZkZoJDezbdIoB4rE3 stromy-entitlements 2026-10
-# The production public key is the only active signer (ORG-PLAN-413 B3PA). Its private half lives
+# Canary revision: the production signer is removed from the effective trust list.
+# A disposable public signer remains active so a production signature reaches
+# the cryptographic rejection path rather than the empty-list availability guard.
+# The production public key is the normal active signer (ORG-PLAN-413 B3PA). Its private half lives
 # only in the `ENTITLEMENTS_SIGNING_KEY` secret of the private stromy-org repo; it is never placed
 # in this public repository.
 #
 # Rotation is add-then-remove: add the new public key as a second line and merge; switch the
 # secret and re-sign every plugin; only then delete the old line.
+stromy-entitlements namespaces="stromy-entitlements" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHOs0tW13v3GQgxNjkCUOpolX7vp9V0qtXkDis8Bu52O org413-disposable-revocation-canary
