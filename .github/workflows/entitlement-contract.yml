@@ -57,6 +57,17 @@ jobs:
           path: head
           persist-credentials: false
 
+      - name: Prove the checked-out PR revision is current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${REPO}/pulls/${PR}" > current-pr.json
+          python3 verifier/verify_pr_revision.py --event "$GITHUB_EVENT_PATH" \
+            --current current-pr.json --head head --base base
+
       - name: List the files the PR changes
         env:
           GH_TOKEN: ${{ github.token }}
@@ -79,3 +90,14 @@ jobs:
             --allowed-signers verifier/allowed_signers --changed-files changed-files.txt | tee verdict.txt
           grep -Eq '^executed=[1-9][0-9]*$' verdict.txt \
             || { echo "::error::zero checks executed - a check that ran nothing is not a pass"; exit 1; }
+
+      - name: Refuse a PR revision that moved during verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${REPO}/pulls/${PR}" > current-pr-final.json
+          python3 verifier/verify_pr_revision.py --event "$GITHUB_EVENT_PATH" \
+            --current current-pr-final.json --head head --base base
