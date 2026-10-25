@@ -1,0 +1,25 @@
+name: repair-entitlement-check
+# Managed by stromy-org public_plugin_entitlements.py; only that writer updates this pin.
+
+# The scheduled job can rerun only an existing cancelled/timed-out verifier
+# run for this plugin's current PR head. A never-registered run is an owner
+# issue from the parent fleet reconcile; workflow_dispatch cannot mint a PR check.
+on:
+  schedule:
+    - cron: '37 5 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: repair-entitlement-check
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  pull-requests: read
+  contents: read
+
+jobs:
+  repair:
+    uses: stromy-org/plugin-contract-check/.github/workflows/repair-entitlement-check.yml@__VERIFIER_SHA__
+    with:
+      verifier_sha: __VERIFIER_SHA__

@@ -12,6 +12,9 @@ private reusable workflow or read a private secret.
 | `allowed_signers` | the pinned public keys; empty until activation |
 | `.github/workflows/entitlement-contract.yml` | the reusable workflow a plugin calls, pinned by full commit SHA |
 | `caller/entitlement-contract.yml` | the thin caller the stromy-org writer adds to each public plugin |
+| `.github/workflows/repair-entitlement-check.yml` | reusable repair workflow, executed with only the calling plugin's Actions-write token |
+| `caller/repair-entitlement-check.yml` | scheduled plugin-local caller installed by the parent writer |
+| `repair_current_head.py` | reruns one cancelled or timed-out verifier run already bound to an open PR's current head |
 | tests | `scripts/tests/test_public_plugin_entitlements.py` in stromy-org: a throwaway keypair, every paired negative control |
 
 ## How a PR is judged
