@@ -1,0 +1,35 @@
+name: repair-entitlement-check
+
+# Called only by a plugin's own schedule/manual workflow. Its token has Actions
+# write on that one plugin; the private parent never receives that permission.
+on:
+  workflow_call:
+    inputs:
+      verifier_sha:
+        required: true
+        type: string
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      pull-requests: read
+      contents: read
+    steps:
+      - name: Refuse a non-commit verifier pin
+        env:
+          VERIFIER_SHA: ${{ inputs.verifier_sha }}
+        run: |
+          [[ "$VERIFIER_SHA" =~ ^[0-9a-f]{40}$ ]]
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: stromy-org/plugin-contract-check
+          ref: ${{ inputs.verifier_sha }}
+          path: verifier
+          persist-credentials: false
+      - name: Rerun one cancelled or timed-out current-head verifier
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 verifier/repair_current_head.py
