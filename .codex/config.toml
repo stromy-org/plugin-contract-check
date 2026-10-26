@@ -1,0 +1,8 @@
+# Codex project configuration
+# AGENTS.md is auto-loaded as primary instructions.
+
+project_doc_fallback_filenames = ["CLAUDE.md"]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "high"
+web_search = "cached"
